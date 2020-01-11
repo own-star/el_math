@@ -1,3 +1,10 @@
+%%% @author Taras J. Honcharuk
+%%% @copyright (C) 2020, TheLostGameTeam
+%%%  
+%%% LICENSE GPLv3
+%%%
+%%%
+
 -module(el_math).
 
 -behaviour(wx_object).
@@ -25,7 +32,7 @@
                 wrong = 0,
                 frame,
                 timer_set = disable,
-                timer = 0
+                timer = disable
                }).
 
 start() ->
@@ -50,42 +57,35 @@ create_frame(Wx) ->
 
     Menu = create_menu(),
     TimerMenu = create_timer_menu(),
-%    StartButton = create_start_menu(),
 
     MenuBar    = wxMenuBar:new(?wxMB_DOCKABLE),
     wxMenuBar:append(MenuBar, Menu, "Оберіть дію"),
     wxMenuBar:append(MenuBar, TimerMenu, "Час"),
-%    wxMenuBar:append(MenuBar, StartButton, "Start"),
     wxFrame:setMenuBar(Frame, MenuBar),
 
     ok = wxFrame:connect(Frame, command_menu_selected),
 
     wxFrame:createStatusBar(Frame,[]),
-    Status = io_lib:format("Вірно: ~p      Невірно: ~p         Залишилось часу: ~p", [0,0,0]),
-%    Status = io_lib:format("Вірно: ~p      Невірно: ~p", [0,0]),
+    Status = io_lib:format("Вірно: ~p      Невірно: ~p         Залишилось часу: ~p", [0,0,disable]),
     ok = wxFrame:setStatusText(Frame, Status,[]),
 
-    Label = wxStaticText:new(Frame, ?wxID_TASK, "", [{pos, {0,0}}, {size,{250, 50}}]),
-    Counter = wxTextCtrl:new(Frame, ?wxID_ANSWER, [{value, ""}, {pos, {250, 5}}, {size, {150, 50}},  {style, ?wxTE_RIGHT}]),
+    Label = wxStaticText:new(Frame, ?wxID_TASK, "", [{pos, {0,0}}, {size,{250, 60}}]),
+    Counter = wxTextCtrl:new(Frame, ?wxID_ANSWER, [{value, ""}, {pos, {250, 5}}, {size, {150, 60}},  {style, ?wxTE_RIGHT}]),
     
     Font = wxFont:new(42, ?wxFONTFAMILY_DEFAULT, ?wxFONTSTYLE_NORMAL, ?wxFONTWEIGHT_BOLD),
 
     Button = wxButton:new(Frame, ?wxID_BUTTON, [{label, "Перевірити"}, {pos, {400, 5}}, {size, {150, 50}}]),
     
-    Result = wxStaticText:new(Frame, ?wxID_RESULT, "", [{pos, {550,0}}, {size,{400, 50}}]),
+    Result = wxStaticText:new(Frame, ?wxID_RESULT, "", [{pos, {550,0}}, {size,{400, 60}}]),
     wxStaticText:setFont(Label, Font),
     wxStaticText:setFont(Result, Font),
     wxTextCtrl:setFont(Counter, Font),
 
     MainSizer = wxBoxSizer:new(?wxHORIZONTAL),
-    wxSizer:add(MainSizer, Label, [{border, 1}]),
-    wxSizer:add(MainSizer, Counter, [{border, 1}]),
-    wxSizer:add(MainSizer, Button, [{border, 1}]),
-    wxSizer:add(MainSizer, Result, [{border, 1}]),
-%    wxSizer:add(MainSizer, Label, [{flag, ?wxALL bor ?wxALIGN_CENTRE},{border, 1}]),
-%    wxSizer:add(MainSizer, Counter, [{flag, ?wxALL bor ?wxALIGN_CENTRE},{border, 1}]),
-%    wxSizer:add(MainSizer, Button, [{flag, ?wxALL bor ?wxALIGN_CENTRE},{border, 1}]),
-%    wxSizer:add(MainSizer, Result, [{flag, ?wxALL bor ?wxALIGN_CENTRE},{border, 1}]),
+    wxSizer:add(MainSizer, Label, [{flag, ?wxALL bor ?wxALIGN_CENTRE},{border, 1}]),
+    wxSizer:add(MainSizer, Counter, [{flag, ?wxALL bor ?wxALIGN_CENTRE},{border, 1}]),
+    wxSizer:add(MainSizer, Button, [{flag, ?wxALL bor ?wxALIGN_CENTRE},{border, 1}]),
+    wxSizer:add(MainSizer, Result, [{flag, ?wxALL bor ?wxALIGN_CENTRE},{border, 1}]),
     wxWindow:setSizer(Frame, MainSizer),
     wxSizer:setSizeHints(MainSizer, Frame),
 
@@ -201,13 +201,13 @@ handle_event(#wx{obj=Frame, id=Id,  userData=UserData, event=#wxCommand{type=com
 handle_event(#wx{obj=Frame, id=?wxID_BUTTON}, State) ->
     State1 = check(Frame, State),
     update_status(Frame, State1),
-%    {A, B, _} = start(Frame, State#state.command, State#state.action),
     {noreply, State1};
 handle_event(Msg, State) ->
     io:format("Got event ~p ~n", [Msg]),
     {noreply, State}.
 
 terminate(_, _) ->
+    io:format("terminate~n"),
     wx:destroy(),
     ok.
 
@@ -225,24 +225,42 @@ mydiv(A, B) ->
     A div B.
 
 get_params(mydiv, Command) when Command rem 10 =:= 0 ->
-    A = rand:uniform(9),
-    {rand:uniform(9) * A, A};
+    A = random(),
+    {random() * A, A};
 get_params(mydiv, Command) ->
     A = Command rem 10,
-    {rand:uniform(9) * A, A};
+    {random() * A, A};
 get_params(mul, Command) when Command rem 10 =:= 0 ->
-    random();
+    random_tuple();
 get_params(mul, Commamd) ->
     A = Commamd rem 10,
-    {A, rand:uniform(9)};
+    {A, random()};
+get_params(sub, 201) ->
+    A = random(),
+    {A + 1, rand:uniform(A)};
+get_params(sub, 202) ->
+    M = random(),
+    B = rand:uniform(9 - M) + M,
+    {M + 10, B};
 get_params(sub, _) ->
-    A = rand:uniform(9),
-    {rand:uniform(9) + A, A};
+    A = random(),
+    {random() + A, A};
+get_params(add, 101) ->
+    A = random(),
+    B = rand:uniform(10 - A),
+    {A, B};
+get_params(add, 102) ->
+    A = rand:uniform(4) + rand:uniform(5),
+    B = rand:uniform(A - 1) + 10 - A,
+    {A, B};
 get_params(_, _) ->
-    random().
+    random_tuple().
 
 random() ->
-    {rand:uniform(9), rand:uniform(9)}.
+    rand:uniform(5) + rand:uniform(5) - 1.
+
+random_tuple() ->
+    {random(), random()}.
 
 sign(mul) ->
     " x ";
@@ -293,40 +311,53 @@ get_object(Id, Frame) ->
 
 create_menu() ->
     Menu = wxMenu:new([]),
-    SubMenu  = wxMenu:new([]),
-    SubMenu2 = wxMenu:new([]),
+    SubMenuAdd = wxMenu:new([]),
+    SubMenuSub = wxMenu:new([]),
+    SubMenuMul  = wxMenu:new([]),
+    SubMenuDiv = wxMenu:new([]),
 
-    wxMenu:append(Menu, 100, "Додавання", []),
+    wxMenu:append(SubMenuAdd, 101, "До 10", []),
+    wxMenu:append(SubMenuAdd, 102, "З переходом через 10", []),
+    wxMenu:append(SubMenuAdd, 100, "Усі", []),
+
+    wxMenu:append(Menu, ?wxID_ANY, "Додавання", SubMenuAdd, []),
+
+
+    wxMenu:append(SubMenuSub, 201, "До 10", []),
+    wxMenu:append(SubMenuSub, 202, "З переходом через 10", []),
+    wxMenu:append(SubMenuSub, 200, "Усі", []),
+
+    wxMenu:append(Menu, ?wxID_ANY, "Віднімання", SubMenuSub, []),
+
     
-    wxMenu:append(Menu, 200, "Віднімання", []),
-
-    wxMenu:append(SubMenu, 301, "x1", []),
-    wxMenu:append(SubMenu, 302, "x2", []),
-    wxMenu:append(SubMenu, 303, "x3", []),
-    wxMenu:append(SubMenu, 304, "x4", []),
-    wxMenu:append(SubMenu, 305, "x5", []),
-    wxMenu:append(SubMenu, 306, "x6", []),
-    wxMenu:append(SubMenu, 307, "x7", []),
-    wxMenu:append(SubMenu, 308, "x8", []),
-    wxMenu:append(SubMenu, 309, "x9", []),
-    wxMenu:break(SubMenu),
-    wxMenu:append(SubMenu, 300, "Усі", []),
+    wxMenu:append(SubMenuMul, 301, "x1", []),
+    wxMenu:append(SubMenuMul, 302, "x2", []),
+    wxMenu:append(SubMenuMul, 303, "x3", []),
+    wxMenu:append(SubMenuMul, 304, "x4", []),
+    wxMenu:append(SubMenuMul, 305, "x5", []),
+    wxMenu:append(SubMenuMul, 306, "x6", []),
+    wxMenu:append(SubMenuMul, 307, "x7", []),
+    wxMenu:append(SubMenuMul, 308, "x8", []),
+    wxMenu:append(SubMenuMul, 309, "x9", []),
+    wxMenu:break(SubMenuMul),
+    wxMenu:append(SubMenuMul, 300, "Усі", []),
     
-    wxMenu:append(Menu, ?wxID_ANY, "Множення", SubMenu, []),
+    wxMenu:append(Menu, ?wxID_ANY, "Множення", SubMenuMul, []),
 
-    wxMenu:append(SubMenu2, 401, ":1", []),
-    wxMenu:append(SubMenu2, 402, ":2", []),
-    wxMenu:append(SubMenu2, 403, ":3", []),
-    wxMenu:append(SubMenu2, 404, ":4", []),
-    wxMenu:append(SubMenu2, 405, ":5", []),
-    wxMenu:append(SubMenu2, 406, ":6", []),
-    wxMenu:append(SubMenu2, 407, ":7", []),
-    wxMenu:append(SubMenu2, 408, ":8", []),
-    wxMenu:append(SubMenu2, 409, ":9", []),
-    wxMenu:break(SubMenu),
-    wxMenu:append(SubMenu2, 400, "Усі", []),
+    
+    wxMenu:append(SubMenuDiv, 401, ":1", []),
+    wxMenu:append(SubMenuDiv, 402, ":2", []),
+    wxMenu:append(SubMenuDiv, 403, ":3", []),
+    wxMenu:append(SubMenuDiv, 404, ":4", []),
+    wxMenu:append(SubMenuDiv, 405, ":5", []),
+    wxMenu:append(SubMenuDiv, 406, ":6", []),
+    wxMenu:append(SubMenuDiv, 407, ":7", []),
+    wxMenu:append(SubMenuDiv, 408, ":8", []),
+    wxMenu:append(SubMenuDiv, 409, ":9", []),
+    wxMenu:break(SubMenuDiv),
+    wxMenu:append(SubMenuDiv, 400, "Усі", []),
 
-    wxMenu:append(Menu, ?wxID_ANY, "Ділення", SubMenu2, []),
+    wxMenu:append(Menu, ?wxID_ANY, "Ділення", SubMenuDiv, []),
     wxMenu:break(Menu),
     wxMenu:append(Menu, 500, "Усі", []),
 
@@ -348,8 +379,8 @@ create_timer_menu() ->
 
     Menu.
 
-create_start_menu() ->
-    Menu = wxMenu:new(),
-
-    wxFrame:connect(Menu, command_menu_selected),
-    Menu.
+%create_start_menu() ->
+%    Menu = wxMenu:new(),
+%
+%    wxFrame:connect(Menu, command_menu_selected),
+%    Menu.

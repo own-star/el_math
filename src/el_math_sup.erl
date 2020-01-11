@@ -9,6 +9,6 @@ start_link() ->
 
 init([]) ->
     Math = {el_math_worker, {el_math_worker, start_link, []},
-           permanent, 5000, worker, [el_math_worker]},
+           permanent, brutal_kill, worker, [el_math_worker]},
 	Procs = [Math],
 	{ok, {{one_for_one, 1, 5}, Procs}}.
