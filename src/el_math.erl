@@ -12,7 +12,8 @@
 
 -define(wxID_TASK, 2).
 -define(wxID_ANSWER, 3).
--define(wxID_RESULT, 4).
+-define(wxID_BUTTON, 900).
+-define(wxID_RESULT, 5).
 
 -define(SERVER, ?MODULE).
 
@@ -23,6 +24,7 @@
                 right = 0,
                 wrong = 0,
                 frame,
+                timer_set = disable,
                 timer = 0
                }).
 
@@ -48,10 +50,12 @@ create_frame(Wx) ->
 
     Menu = create_menu(),
     TimerMenu = create_timer_menu(),
+%    StartButton = create_start_menu(),
 
     MenuBar    = wxMenuBar:new(?wxMB_DOCKABLE),
     wxMenuBar:append(MenuBar, Menu, "Оберіть дію"),
     wxMenuBar:append(MenuBar, TimerMenu, "Час"),
+%    wxMenuBar:append(MenuBar, StartButton, "Start"),
     wxFrame:setMenuBar(Frame, MenuBar),
 
     ok = wxFrame:connect(Frame, command_menu_selected),
@@ -66,7 +70,7 @@ create_frame(Wx) ->
     
     Font = wxFont:new(42, ?wxFONTFAMILY_DEFAULT, ?wxFONTSTYLE_NORMAL, ?wxFONTWEIGHT_BOLD),
 
-    Button = wxButton:new(Frame, 900, [{label, "Перевірити"}, {pos, {400, 5}}, {size, {150, 50}}]),
+    Button = wxButton:new(Frame, ?wxID_BUTTON, [{label, "Перевірити"}, {pos, {400, 5}}, {size, {150, 50}}]),
     
     Result = wxStaticText:new(Frame, ?wxID_RESULT, "", [{pos, {550,0}}, {size,{400, 50}}]),
     wxStaticText:setFont(Label, Font),
@@ -74,10 +78,14 @@ create_frame(Wx) ->
     wxTextCtrl:setFont(Counter, Font),
 
     MainSizer = wxBoxSizer:new(?wxHORIZONTAL),
-    wxSizer:add(MainSizer, Label, [{flag, ?wxALL bor ?wxALIGN_CENTRE},{border, 1}]),
-    wxSizer:add(MainSizer, Counter, [{flag, ?wxALL bor ?wxALIGN_CENTRE},{border, 1}]),
-    wxSizer:add(MainSizer, Button, [{flag, ?wxALL bor ?wxALIGN_CENTRE},{border, 5}]),
-    wxSizer:add(MainSizer, Result, [{flag, ?wxALL bor ?wxALIGN_CENTRE},{border, 1}]),
+    wxSizer:add(MainSizer, Label, [{border, 1}]),
+    wxSizer:add(MainSizer, Counter, [{border, 1}]),
+    wxSizer:add(MainSizer, Button, [{border, 1}]),
+    wxSizer:add(MainSizer, Result, [{border, 1}]),
+%    wxSizer:add(MainSizer, Label, [{flag, ?wxALL bor ?wxALIGN_CENTRE},{border, 1}]),
+%    wxSizer:add(MainSizer, Counter, [{flag, ?wxALL bor ?wxALIGN_CENTRE},{border, 1}]),
+%    wxSizer:add(MainSizer, Button, [{flag, ?wxALL bor ?wxALIGN_CENTRE},{border, 1}]),
+%    wxSizer:add(MainSizer, Result, [{flag, ?wxALL bor ?wxALIGN_CENTRE},{border, 1}]),
     wxWindow:setSizer(Frame, MainSizer),
     wxSizer:setSizeHints(MainSizer, Frame),
 
@@ -88,6 +96,9 @@ create_frame(Wx) ->
 start(Frame, Command) ->
     Action = get_action(integer_to_list(Command)),
     timer_start(0),
+    Button = get_object(?wxID_BUTTON, Frame),
+    io:format("Button: ~p~n", [Button]),
+    wxButton:enable(Button),
     start(Frame, Command, Action).
 
 start(Frame, Command, Action0) ->
@@ -119,6 +130,10 @@ update_status(#state{frame = Frame, right = R, wrong = W, timer = Time}) ->
 update_status(Frame, #state{right = R, wrong = W, timer = Time}) ->
     Status = io_lib:format("Вірно: ~p      Невірно: ~p         Залишилось часу: ~p", [R,W, Time]),
     wxFrame:setStatusText(Frame, Status, []).
+
+disable_button(#state{frame = Frame}) ->
+    Button = get_object(?wxID_BUTTON, Frame),
+    wxButton:disable(Button).
 
 check(Frame, #state{a = A, b = B, action = Action, command = Command, right = R, wrong = W} = State) ->
     Answer = get_object(?wxID_ANSWER, Frame),
@@ -152,9 +167,11 @@ handle_call(_, _, State) ->
 
 handle_cast(_, State) ->
     {noreply, State}.
-
-handle_info({timeout, _, timer}, #state{timer = 0} = State) ->
+handle_info({timeout, _, timer}, #state{timer_set = disable} = State) ->
     {noreply, State};
+handle_info({timeout, _, timer}, #state{timer = 0} = State) ->
+    disable_button(State),
+    {noreply, State#state{timer = State#state.timer_set}};
 handle_info({timeout, _, timer}, #state{timer = Time} = State) ->
     erlang:start_timer(1000, self(), timer),
     State1 = State#state{timer = Time - 1},
@@ -170,13 +187,18 @@ handle_event(#wx{event=#wxClose{}, obj=Frame}, State) ->
     {stop, normal, State};
 handle_event(#wx{id = Id}, State) when Id div 100 =:= 6 ->
     Time = timer(Id),
-    {noreply, State#state{timer =  Time}};
+    {noreply, State#state{timer =  Time, timer_set = Time}};
 handle_event(#wx{obj=Frame, id=Id,  userData=UserData, event=#wxCommand{type=command_menu_selected}} = Wx, State)->
     io:format("got wx:~p ud:~p~n", [Wx, UserData]),
     {A, B, Action} = start(Frame, Id),
-    State1 = State#state{a = A, b = B, action = Action, command = Id},
+    State1 = State#state{a = A,
+                         b = B,
+                         action = Action,
+                         command = Id,
+                         right = 0,
+                         wrong =0},
     {noreply, State1};
-handle_event(#wx{obj=Frame, id=900}, State) ->
+handle_event(#wx{obj=Frame, id=?wxID_BUTTON}, State) ->
     State1 = check(Frame, State),
     update_status(Frame, State1),
 %    {A, B, _} = start(Frame, State#state.command, State#state.action),
@@ -245,14 +267,12 @@ get_action(_) ->
     get_action([$5]).
 
 timer(600) ->
-    0;
+    disable;
 timer(630) ->
-%    erlang:start_timer(1000, self(), timer),
     30;
 timer(Command) ->
     Min = Command rem 10,
     Time = Min * 60,
-%    erlang:start_timer(1000, self(), timer),
     Time.
 
 timer_start(#state{timer = 0}) ->
@@ -265,6 +285,8 @@ get_object(Id, Frame) ->
     case Id of
         ?wxID_ANSWER ->
             wx:typeCast(Object, wxTextCtrl);
+        ?wxID_BUTTON ->
+            wx:typeCast(Object, wxButton);
         _ ->
             wx:typeCast(Object, wxStaticText)
     end.
@@ -326,3 +348,8 @@ create_timer_menu() ->
 
     Menu.
 
+create_start_menu() ->
+    Menu = wxMenu:new(),
+
+    wxFrame:connect(Menu, command_menu_selected),
+    Menu.
