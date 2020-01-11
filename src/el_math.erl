@@ -102,6 +102,7 @@ start(Frame, Command, Action0) ->
 
     Task = get_object(?wxID_TASK, Frame),
     Answer = get_object(?wxID_ANSWER, Frame),
+    wxWindow:setFocus(Answer),
     
 
     {A, B} = get_params(Action, Command),
@@ -140,6 +141,7 @@ check(Frame, #state{a = A, b = B, action = Action, command = Command, right = R,
         _ ->
             wxStaticText:setLabel(Result, "Невірно"),
             wxTextCtrl:setValue(Answer, ""),
+            wxWindow:setFocus(Answer),
             State#state{wrong = W + 1}
     end.
     
@@ -314,7 +316,7 @@ create_timer_menu() ->
 
     wxMenu:appendRadioItem(Menu, 600, "Без обмеження", []),
     
-    wxMenu:appendSeparator(Menu),
+    wxMenu:break(Menu),
 
     wxMenu:appendRadioItem(Menu, 630, "30 сек", []),
     wxMenu:appendRadioItem(Menu, 601, "1 хв", []),
