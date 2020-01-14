@@ -97,7 +97,7 @@ start(Frame, Command) ->
     Action = get_action(integer_to_list(Command)),
     timer_start(0),
     Button = get_object(?wxID_BUTTON, Frame),
-    io:format("Button: ~p~n", [Button]),
+%    io:format("Button: ~p~n", [Button]),
     wxButton:enable(Button),
     start(Frame, Command, Action).
 
@@ -109,7 +109,7 @@ start(Frame, Command, Action0) ->
         _ -> Action0
     end,
 
-    io:format("start command: ~p, action: ~p~n", [Command, Action]),
+%    io:format("start command: ~p, action: ~p~n", [Command, Action]),
 
     Task = get_object(?wxID_TASK, Frame),
     Answer = get_object(?wxID_ANSWER, Frame),
@@ -146,7 +146,7 @@ check(Frame, #state{a = A, b = B, action = Action, command = Command, right = R,
               0
     end,
 
-    io:format("~p ~p ~p = ~p~n", [A, sign(Action), B, Res]),
+%    io:format("~p ~p ~p = ~p~n", [A, sign(Action), B, Res]),
     Result = get_object(?wxID_RESULT, Frame),
     case apply(?MODULE, Action, [A, B]) of
         Res ->
@@ -189,7 +189,7 @@ handle_event(#wx{id = Id}, State) when Id div 100 =:= 6 ->
     Time = timer(Id),
     {noreply, State#state{timer =  Time, timer_set = Time}};
 handle_event(#wx{obj=Frame, id=Id,  userData=UserData, event=#wxCommand{type=command_menu_selected}} = Wx, State)->
-    io:format("got wx:~p ud:~p~n", [Wx, UserData]),
+%    io:format("got wx:~p ud:~p~n", [Wx, UserData]),
     {A, B, Action} = start(Frame, Id),
     State1 = State#state{a = A,
                          b = B,

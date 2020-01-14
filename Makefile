@@ -1,5 +1,4 @@
 PROJECT=el_math
-NODE_NAME=${PROJECT}@$(shell ip route get 1 | awk '{ print $$7;exit}')
 
 ifeq ($(wildcard rebar3),rebar3)
 REBAR3 = $(CURDIR)/rebar3
@@ -34,11 +33,11 @@ production_release:
 	@$(REBAR3) as production release -n $(PROJECT)
 
 run:
-	$(REBAR3) as production shell --name ${NODE_NAME}
+	$(REBAR3) as production shell 
 
 tar:
 	$(REBAR3) as production tar
 
 debug:
-	ERL_FLAGS="-args_file ./config/local/vm.args.debug" $(REBAR3) as local shell --name ${NODE_NAME}
+	ERL_FLAGS="-args_file ./config/local/vm.args.debug" $(REBAR3) as local shell
 
