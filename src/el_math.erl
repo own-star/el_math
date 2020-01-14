@@ -20,7 +20,9 @@
 -define(wxID_TASK, 2).
 -define(wxID_ANSWER, 3).
 -define(wxID_BUTTON, 900).
--define(wxID_RESULT, 5).
+-define(wxID_RESULT, 4).
+-define(wxID_RANDOM, 5).
+
 
 -define(SERVER, ?MODULE).
 
@@ -32,7 +34,9 @@
                 wrong = 0,
                 frame,
                 timer_set = disable,
-                timer = disable
+                timer = disable,
+                rand_list = [],
+                random = true
                }).
 
 start() ->
@@ -93,15 +97,14 @@ create_frame(Wx) ->
     wxFrame:connect(Frame, command_button_clicked),
     Frame.
 
-start(Frame, Command) ->
+start(Frame, Command, A) ->
     Action = get_action(integer_to_list(Command)),
     timer_start(0),
     Button = get_object(?wxID_BUTTON, Frame),
-%    io:format("Button: ~p~n", [Button]),
     wxButton:enable(Button),
-    start(Frame, Command, Action).
+    start(Frame, Command, Action, A).
 
-start(Frame, Command, Action0) ->
+start(Frame, Command, Action0, R) ->
 
     Action =
     case Command of
@@ -116,7 +119,7 @@ start(Frame, Command, Action0) ->
     wxWindow:setFocus(Answer),
     
 
-    {A, B} = get_params(Action, Command),
+    {A, B} = get_params(Action, Command, R),
 
     wxStaticText:setLabel(Task, [integer_to_list(A), sign(Action), integer_to_list(B), " = "]),
     wxTextCtrl:setValue(Answer, ""),
@@ -135,7 +138,7 @@ disable_button(#state{frame = Frame}) ->
     Button = get_object(?wxID_BUTTON, Frame),
     wxButton:disable(Button).
 
-check(Frame, #state{a = A, b = B, action = Action, command = Command, right = R, wrong = W} = State) ->
+check(Frame, #state{a = A, b = B, action = Action, command = Command, right = R, wrong = W, rand_list = Random} = State) ->
     Answer = get_object(?wxID_ANSWER, Frame),
     TextRes = wxTextCtrl:getValue(Answer),
     Res =
@@ -145,13 +148,18 @@ check(Frame, #state{a = A, b = B, action = Action, command = Command, right = R,
               io:format("Err: ~p~n", [Err]),
               0
     end,
-
+%    io:format("Random: ~p~n", [Random]),
 %    io:format("~p ~p ~p = ~p~n", [A, sign(Action), B, Res]),
     Result = get_object(?wxID_RESULT, Frame),
     case apply(?MODULE, Action, [A, B]) of
+        Res when Random =/= [] ->
+            wxStaticText:setLabel(Result, "Вірно"),
+            [H|T] = Random,
+            {A1, B1, Action1} = start(Frame, Command, Action, H),
+            State#state{a = A1, b = B1, action = Action1, right = R + 1, rand_list = T};
         Res ->
             wxStaticText:setLabel(Result, "Вірно"),
-            {A1, B1, Action1} = start(Frame, Command, Action),
+            {A1, B1, Action1} = start(Frame, Command, Action, 0),
             State#state{a = A1, b = B1, action = Action1, right = R + 1};
         _ ->
             wxStaticText:setLabel(Result, "Невірно"),
@@ -188,15 +196,25 @@ handle_event(#wx{event=#wxClose{}, obj=Frame}, State) ->
 handle_event(#wx{id = Id}, State) when Id div 100 =:= 6 ->
     Time = timer(Id),
     {noreply, State#state{timer =  Time, timer_set = Time}};
-handle_event(#wx{obj=Frame, id=Id,  userData=UserData, event=#wxCommand{type=command_menu_selected}} = Wx, State)->
+handle_event(#wx{obj=Menu, id=?wxID_RANDOM}, State) ->
+    case wxMenu:isChecked(Menu, ?wxID_RANDOM) of
+        true ->
+            {noreply, State#state{random = true}};
+        _ ->
+            {noreply, State#state{random = false}}
+    end;
+handle_event(#wx{obj=Frame, id=Id,  userData=UserData, event=#wxCommand{type=command_menu_selected}}, State)->
+    [R|Tail] = get_random_and_tail(State#state.random),
 %    io:format("got wx:~p ud:~p~n", [Wx, UserData]),
-    {A, B, Action} = start(Frame, Id),
+    {A, B, Action} = start(Frame, Id, R),
     State1 = State#state{a = A,
                          b = B,
                          action = Action,
                          command = Id,
                          right = 0,
-                         wrong =0},
+                         wrong =0,
+                         rand_list = Tail
+                        },
     {noreply, State1};
 handle_event(#wx{obj=Frame, id=?wxID_BUTTON}, State) ->
     State1 = check(Frame, State),
@@ -215,6 +233,11 @@ code_change(_, _, State) ->
     {ok, State}.
 
 
+get_random_and_tail(true) ->
+    [0|[]];
+get_random_and_tail(false) ->
+    shuffle(lists:seq(1,9)).
+
 mul(A, B) ->
     A * B.
 add(A, B) ->
@@ -224,43 +247,85 @@ sub(A, B) ->
 mydiv(A, B) ->
     A div B.
 
-get_params(mydiv, Command) when Command rem 10 =:= 0 ->
+get_params(mydiv, Command, 0) when Command rem 10 =:= 0 ->
     A = random(),
     {random() * A, A};
-get_params(mydiv, Command) ->
+get_params(mydiv, Command, 0) ->
     A = Command rem 10,
     {random() * A, A};
-get_params(mul, Command) when Command rem 10 =:= 0 ->
+get_params(mul, Command, 0) when Command rem 10 =:= 0 ->
     random_tuple();
-get_params(mul, Commamd) ->
+get_params(mul, Commamd, 0) ->
     A = Commamd rem 10,
     {A, random()};
-get_params(sub, 201) ->
+get_params(sub, 201, 0) ->
     A = random(),
     {A + 1, rand:uniform(A)};
-get_params(sub, 202) ->
+get_params(sub, 202, 0) ->
     M = random(),
-    B = rand:uniform(9 - M) + M,
+    B = rand:uniform(10 - M) + M - 1,
     {M + 10, B};
-get_params(sub, _) ->
+get_params(sub, _, 0) ->
     A = random(),
     {random() + A, A};
-get_params(add, 101) ->
+get_params(add, 101, 0) ->
     A = random(),
     B = rand:uniform(10 - A),
     {A, B};
-get_params(add, 102) ->
+get_params(add, 102, 0) ->
     A = rand:uniform(4) + rand:uniform(5),
     B = rand:uniform(A - 1) + 10 - A,
     {A, B};
-get_params(_, _) ->
-    random_tuple().
+get_params(_, _, 0) ->
+    random_tuple();
+
+get_params(mydiv, Command, B) when Command rem 10 =:= 0 ->
+    {random() * B, B};
+get_params(mydiv, Command, A) ->
+    B = Command rem 10,
+    {A * B, B};
+get_params(mul, Command, B) when Command rem 10 =:= 0 ->
+    {B, random()};
+get_params(mul, Commamd, B) ->
+    A = Commamd rem 10,
+    {A, B};
+get_params(sub, 201, B) ->
+%    A = random(),
+    {B + 1, rand:uniform(B)};
+get_params(sub, 202, M) ->
+%    M = random(),
+    B = rand:uniform(10 - M) + M - 1,
+    {M + 10, B};
+get_params(sub, _, A) ->
+%    A = random(),
+    {random() + A, A};
+get_params(add, 101, A) ->
+%    A = random(),
+    B = rand:uniform(10 - A),
+    {A, B};
+get_params(add, 102, A) ->
+%    A = rand:uniform(4) + rand:uniform(5),
+    B = rand:uniform(A) + 10 - A,
+    {A, B};
+get_params(_, _, A) ->
+    {A, random()}.
+
+
 
 random() ->
     rand:uniform(5) + rand:uniform(5) - 1.
 
 random_tuple() ->
     {random(), random()}.
+
+shuffle(List) ->
+    shuffle(List, []).
+
+shuffle([], Acc) ->
+    Acc;
+shuffle(List, Acc) ->
+    N = lists:nth(rand:uniform(length(List)), List),
+    shuffle(lists:delete(N, List), [N|Acc]).
 
 sign(mul) ->
     " x ";
@@ -316,6 +381,8 @@ create_menu() ->
     SubMenuMul  = wxMenu:new([]),
     SubMenuDiv = wxMenu:new([]),
 
+    wxMenu:appendCheckItem(Menu, ?wxID_RANDOM, "Випадково", []),
+    wxMenu:break(Menu),
     wxMenu:append(SubMenuAdd, 101, "До 10", []),
     wxMenu:append(SubMenuAdd, 102, "З переходом через 10", []),
     wxMenu:append(SubMenuAdd, 100, "Усі", []),
@@ -360,6 +427,9 @@ create_menu() ->
     wxMenu:append(Menu, ?wxID_ANY, "Ділення", SubMenuDiv, []),
     wxMenu:break(Menu),
     wxMenu:append(Menu, 500, "Усі", []),
+
+    wxMenu:check(Menu, ?wxID_RANDOM, true),
+    wxMenu:connect(Menu, command_menu_selected),
 
 
     Menu.
