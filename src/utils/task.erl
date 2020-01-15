@@ -1,3 +1,11 @@
+%%% @author Taras J. Honcharuk
+%%% @copyright (C) 2020, TheLostGameTeam
+%%%  
+%%% LICENSE GPLv3
+%%%
+%%%
+
+
 -module(task).
 
 -export([start/3]).
@@ -30,7 +38,9 @@ start(Frame, Command, Action0, R) ->
 
     {A, B} = get_params(Action, Command, R),
 
-    wxStaticText:setLabel(Task, [integer_to_list(A), sign(Action), integer_to_list(B), " = "]),
+    wxStaticText:setLabel(Task, [integer_to_list(A),
+                                 sign(Action),
+                                 integer_to_list(B), " = "]),
     wxTextCtrl:setValue(Answer, ""),
 
     {A, B, Action}.
@@ -56,7 +66,10 @@ check(#state{frame = Frame,
             wxStaticText:setLabel(Result, "Вірно"),
             [H|T] = Random,
             {A1, B1, Action1} = start(Frame, Command, Action, H),
-            State#state{a = A1, b = B1, action = Action1, right = R + 1, rand_list = T};
+            State#state{a = A1, b = B1,
+                        action = Action1,
+                        right = R + 1,
+                        rand_list = T};
         Res ->
             wxStaticText:setLabel(Result, "Вірно"),
             {A1, B1, Action1} = start(Frame, Command, Action, 0),

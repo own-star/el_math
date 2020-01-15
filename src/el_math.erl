@@ -11,7 +11,8 @@
 
 -export([start/0]).
 
--export([init/1, handle_call/3, handle_cast/2, handle_info/2, handle_event/2, terminate/2, code_change/3]).
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2,
+         handle_event/2, terminate/2, code_change/3]).
 
 %-export([mul/2, mydiv/2, add/2, sub/2]).
 
@@ -40,6 +41,7 @@ handle_call(_, _, State) ->
 
 handle_cast(_, State) ->
     {noreply, State}.
+
 handle_info({timeout, _, timer}, #state{timer_set = disable} = State) ->
     {noreply, State};
 handle_info({timeout, _, timer}, #state{timer = 0} = State) ->
@@ -71,7 +73,8 @@ handle_event(#wx{obj=Menu, id=?wxID_RANDOM}, State) ->
             {noreply, State#state{random = false}}
     end;
 
-handle_event(#wx{obj=Frame, id=Id, event=#wxCommand{type=command_menu_selected}}, State)->
+handle_event(#wx{obj=Frame, id=Id,
+                 event=#wxCommand{type=command_menu_selected}}, State)->
     [R|Tail] = get_random_and_tail(State#state.random),
     {A, B, Action} = task:start(Frame, Id, R),
     State1 = State#state{a = A,

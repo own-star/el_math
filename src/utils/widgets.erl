@@ -1,3 +1,10 @@
+%%% @author Taras J. Honcharuk
+%%% @copyright (C) 2020, TheLostGameTeam
+%%%  
+%%% LICENSE GPLv3
+%%%
+%%%
+
 -module(widgets).
 
 -export([create_frame/1]).
@@ -24,17 +31,27 @@ create_frame(Wx) ->
     ok = wxFrame:connect(Frame, command_menu_selected),
 
     wxFrame:createStatusBar(Frame,[]),
-    Status = io_lib:format("Вірно: ~p      Невірно: ~p         Залишилось часу: ~p", [0,0,disable]),
+    Status = io_lib:format("Вірно: ~p      Невірно: ~p         Залишилось часу: ~p",
+                           [0,0,disable]),
     ok = wxFrame:setStatusText(Frame, Status,[]),
 
-    Label = wxStaticText:new(Frame, ?wxID_TASK, "", [{pos, {0,0}}, {size,{250, 60}}]),
-    Counter = wxTextCtrl:new(Frame, ?wxID_ANSWER, [{value, ""}, {pos, {250, 5}}, {size, {150, 60}},  {style, ?wxTE_RIGHT}]),
+    Label = wxStaticText:new(Frame, ?wxID_TASK, "", [{pos, {0,0}},
+                                                     {size,{250, 60}}]),
+    Counter = wxTextCtrl:new(Frame, ?wxID_ANSWER, [{value, ""},
+                                                   {pos, {250, 5}},
+                                                   {size, {150, 60}},
+                                                   {style, ?wxTE_RIGHT}]),
     
-    Font = wxFont:new(42, ?wxFONTFAMILY_DEFAULT, ?wxFONTSTYLE_NORMAL, ?wxFONTWEIGHT_BOLD),
+    Font = wxFont:new(42, ?wxFONTFAMILY_DEFAULT,
+                      ?wxFONTSTYLE_NORMAL,
+                      ?wxFONTWEIGHT_BOLD),
 
-    Button = wxButton:new(Frame, ?wxID_BUTTON, [{label, "Перевірити"}, {pos, {400, 5}}, {size, {150, 50}}]),
+    Button = wxButton:new(Frame, ?wxID_BUTTON, [{label, "Перевірити"},
+                                                {pos, {400, 5}},
+                                                {size, {150, 50}}]),
     
-    Result = wxStaticText:new(Frame, ?wxID_RESULT, "", [{pos, {550,0}}, {size,{400, 60}}]),
+    Result = wxStaticText:new(Frame, ?wxID_RESULT, "", [{pos, {550,0}},
+                                                        {size,{400, 60}}]),
     wxStaticText:setFont(Label, Font),
     wxStaticText:setFont(Result, Font),
     wxTextCtrl:setFont(Counter, Font),
@@ -139,7 +156,8 @@ get_object(Id, Frame) ->
     end.
 
 update_status(#state{frame = Frame, right = R, wrong = W, timer = Time}) ->
-    Status = io_lib:format("Вірно: ~p      Невірно: ~p         Залишилось часу: ~p", [R,W, Time]),
+    Status = io_lib:format("Вірно: ~p      Невірно: ~p         Залишилось часу: ~p",
+                           [R,W, Time]),
     wxFrame:setStatusText(Frame, Status, []).
 
 disable_button(#state{frame = Frame}) ->
