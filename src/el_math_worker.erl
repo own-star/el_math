@@ -6,6 +6,7 @@ start_link() ->
     case el_math:start() of
         {_, _, wxFrame, Pid} ->
             {ok, Pid};
-        _ ->
+        Other ->
+            io:format("Other Start: ~p~n", [Other]),
             error
     end.
