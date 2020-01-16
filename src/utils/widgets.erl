@@ -3,6 +3,7 @@
 %%%  
 %%% LICENSE GPLv3
 %%%
+%%% https://github.com/own-star/el_math
 %%%
 
 -module(widgets).
@@ -64,6 +65,8 @@ create_frame(Wx) ->
     wxWindow:setSizer(Frame, MainSizer),
     wxSizer:setSizeHints(MainSizer, Frame),
 
+    Icon = wxIcon:new(code:priv_dir(el_math) ++ "/icon2.png"),
+    wxFrame:setIcon(Frame, Icon),
 
     wxFrame:connect(Frame, command_button_clicked),
     Frame.

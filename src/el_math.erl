@@ -3,6 +3,7 @@
 %%%  
 %%% LICENSE GPLv3
 %%%
+%%% https://github.com/own-star/el_math
 %%%
 
 -module(el_math).
