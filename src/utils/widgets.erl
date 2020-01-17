@@ -23,10 +23,12 @@ create_frame(Wx) ->
 
     Menu = create_menu(),
     TimerMenu = create_timer_menu(),
+    HelpMenu = create_help_menu(),
 
     MenuBar    = wxMenuBar:new(?wxMB_DOCKABLE),
     wxMenuBar:append(MenuBar, Menu, "Оберіть дію"),
     wxMenuBar:append(MenuBar, TimerMenu, "Час"),
+    wxMenuBar:append(MenuBar, HelpMenu, "Допомога"),
     wxFrame:setMenuBar(Frame, MenuBar),
 
     ok = wxFrame:connect(Frame, command_menu_selected),
@@ -143,6 +145,42 @@ create_timer_menu() ->
     wxMenu:appendRadioItem(Menu, 602, "2 хв", []),
     wxMenu:appendRadioItem(Menu, 603, "3 хв", []),
     wxMenu:appendRadioItem(Menu, 605, "5 хв", []),
+
+    Menu.
+
+create_help_menu() ->
+    Menu = wxMenu:new(),
+    MenuMul = wxMenu:new(),
+    MenuDiv = wxMenu:new(),
+
+
+    wxMenu:append(MenuMul, ?wxID_HELP_MUL1, "x1", []),
+    wxMenu:append(MenuMul, ?wxID_HELP_MUL2, "x2", []),
+    wxMenu:append(MenuMul, ?wxID_HELP_MUL3, "x3", []),
+    wxMenu:append(MenuMul, ?wxID_HELP_MUL4, "x4", []),
+    wxMenu:append(MenuMul, ?wxID_HELP_MUL5, "x5", []),
+    wxMenu:append(MenuMul, ?wxID_HELP_MUL6, "x6", []),
+    wxMenu:append(MenuMul, ?wxID_HELP_MUL7, "x7", []),
+    wxMenu:append(MenuMul, ?wxID_HELP_MUL8, "x8", []),
+    wxMenu:append(MenuMul, ?wxID_HELP_MUL9, "x9", []),
+    wxMenu:append(MenuMul, ?wxID_HELP_MUL10, "x10", []),
+
+    wxMenu:append(Menu, ?wxID_ANY, "Множення", MenuMul, []),
+
+    wxMenu:append(MenuDiv, ?wxID_HELP_DIV1, ":1", []),
+    wxMenu:append(MenuDiv, ?wxID_HELP_DIV2, ":2", []),
+    wxMenu:append(MenuDiv, ?wxID_HELP_DIV3, ":3", []),
+    wxMenu:append(MenuDiv, ?wxID_HELP_DIV4, ":4", []),
+    wxMenu:append(MenuDiv, ?wxID_HELP_DIV5, ":5", []),
+    wxMenu:append(MenuDiv, ?wxID_HELP_DIV6, ":6", []),
+    wxMenu:append(MenuDiv, ?wxID_HELP_DIV7, ":7", []),
+    wxMenu:append(MenuDiv, ?wxID_HELP_DIV8, ":8", []),
+    wxMenu:append(MenuDiv, ?wxID_HELP_DIV9, ":9", []),
+    wxMenu:append(MenuDiv, ?wxID_HELP_DIV10, ":10", []),
+
+    wxMenu:append(Menu, ?wxID_ANY, "Ділення", MenuDiv, []),
+
+    wxMenu:append(Menu, ?wxID_ABOUT, "About", []),
 
     Menu.
 

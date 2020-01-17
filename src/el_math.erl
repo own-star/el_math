@@ -66,6 +66,14 @@ handle_event(#wx{id = Id}, State) when Id div 100 =:= 6 ->
     Time = timer(Id),
     {noreply, State#state{timer =  Time, timer_set = Time}};
 
+handle_event(#wx{id = ?wxID_ABOUT}, State) ->
+    wxMessageDialog:showModal(help:get(?wxID_ABOUT)),
+    {noreply, State};
+
+handle_event(#wx{id = Id}, State) when Id div 100 =:= 7 ->
+    wxMessageDialog:showModal(help:get(Id)),
+    {noreply, State};
+
 handle_event(#wx{obj=Menu, id=?wxID_RANDOM}, State) ->
     case wxMenu:isChecked(Menu, ?wxID_RANDOM) of
         true ->

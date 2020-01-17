@@ -1,6 +1,6 @@
 {application, 'el_math', [
 	{description, "Ariphmethics for school"},
-	{vsn, "0.1.0"},
+	{vsn, "0.1.1"},
 	{modules, ['el_math','el_math_app','el_math_sup','el_math_worker']},
 	{registered, [el_math_sup]},
 	{applications, [kernel,stdlib,wx]},
