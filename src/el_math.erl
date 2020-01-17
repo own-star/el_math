@@ -75,12 +75,7 @@ handle_event(#wx{id = Id}, State) when Id div 100 =:= 7 ->
     {noreply, State};
 
 handle_event(#wx{obj=Menu, id=?wxID_RANDOM}, State) ->
-    case wxMenu:isChecked(Menu, ?wxID_RANDOM) of
-        true ->
-            {noreply, State#state{random = true}};
-        _ ->
-            {noreply, State#state{random = false}}
-    end;
+    {noreply, State#state{random = wxMenu:isChecked(Menu, ?wxID_RANDOM)}};
 
 handle_event(#wx{obj=Frame, id=Id,
                  event=#wxCommand{type=command_menu_selected}}, State)->

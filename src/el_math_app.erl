@@ -5,7 +5,6 @@
 -export([stop/1]).
 
 start(_Type, _Args) ->
-%	el_math:start_link(),
     el_math_sup:start_link().
 
 stop(_State) ->
