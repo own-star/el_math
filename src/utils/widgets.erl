@@ -65,7 +65,7 @@ create_frame(Wx) ->
     wxWindow:setSizer(Frame, MainSizer),
     wxSizer:setSizeHints(MainSizer, Frame),
 
-    Icon = wxIcon:new(filename:absname_join(code:priv_dir(?APP_NAME), "icon2.png")),
+    Icon = wxIcon:new(filename:absname_join(code:priv_dir(?APP_NAME), "icon3.ico")),
     wxFrame:setIcon(Frame, Icon),
 
     wxFrame:connect(Frame, command_button_clicked),
